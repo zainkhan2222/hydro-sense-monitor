@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,28 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				hydro: {
+					100: '#E0F7FA',
+					200: '#B2EBF2',
+					300: '#80DEEA',
+					400: '#4DD0E1',
+					500: '#26C6DA',
+					600: '#00ACC1',
+					700: '#0097A7',
+					800: '#00838F',
+					900: '#006064',
+				},
+				water: {
+					light: '#E3F2FD',
+					DEFAULT: '#2196F3',
+					dark: '#1565C0',
+				},
+				alert: {
+					low: '#4CAF50',
+					medium: '#FF9800',
+					high: '#F44336',
+					critical: '#D32F2F',
 				}
 			},
 			borderRadius: {
@@ -84,11 +107,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'flow': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' }
+				},
+				'ripple': {
+					'0%': { transform: 'scale(0.95)', opacity: '1' },
+					'100%': { transform: 'scale(2)', opacity: '0' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'flow': 'flow 3s ease-in-out infinite',
+				'ripple': 'ripple 1s cubic-bezier(0, 0.2, 0.8, 1) infinite'
 			}
 		}
 	},
