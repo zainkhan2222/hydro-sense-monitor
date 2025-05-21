@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -18,11 +19,10 @@ interface NavbarProps {
 
 const Navbar = ({ onMenuClick }: NavbarProps) => {
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
 
-  const handleLogout = () => {
-    // This will be replaced with actual Supabase logout logic
-    console.log("Logging out...");
-    navigate("/login");
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (
@@ -37,12 +37,24 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="relative">
                 <User className="h-5 w-5" />
+                {profile && (
+                  <span className="absolute -bottom-1 -right-1 text-xs bg-primary text-primary-foreground rounded-full px-1">
+                    {profile.role === 'admin' ? 'A' : profile.role === 'sensor_owner' ? 'O' : 'V'}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {profile ? `${profile.first_name} ${profile.last_name}` : "My Account"}
+                {profile && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {profile.role === 'admin' ? 'Administrator' : profile.role === 'sensor_owner' ? 'Station Owner' : 'Viewer'}
+                  </p>
+                )}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate("/profile")}>
                 <User className="mr-2 h-4 w-4" />

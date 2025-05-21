@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const RegisterForm = () => {
   const [firstName, setFirstName] = useState("");
@@ -20,47 +20,30 @@ const RegisterForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const { signUp, isLoading } = useAuth();
+  const [passwordError, setPasswordError] = useState("");
+
+  const validatePassword = () => {
+    if (password !== confirmPassword) {
+      setPasswordError("Passwords don't match");
+      return false;
+    }
+    if (password.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match",
-        variant: "destructive",
-      });
-      setIsLoading(false);
+    if (!validatePassword()) {
       return;
     }
-
-    // This is a placeholder for Supabase integration
-    // You'll need to connect to Supabase and implement the actual registration logic
-    try {
-      // Simulate registration
-      setTimeout(() => {
-        console.log("Registering with:", email, firstName, lastName);
-        toast({
-          title: "Registration successful",
-          description: "Please check your email to verify your account",
-        });
-        navigate("/login");
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration failed",
-        description: "Please try again later",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
+    
+    await signUp(email, password, firstName, lastName);
   };
 
   return (
@@ -84,6 +67,7 @@ const RegisterForm = () => {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -94,6 +78,7 @@ const RegisterForm = () => {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -106,6 +91,7 @@ const RegisterForm = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -117,6 +103,7 @@ const RegisterForm = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -128,10 +115,21 @@ const RegisterForm = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              disabled={isLoading}
             />
+            {passwordError && (
+              <p className="text-sm text-destructive">{passwordError}</p>
+            )}
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Register"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Register"
+            )}
           </Button>
         </form>
       </CardContent>
