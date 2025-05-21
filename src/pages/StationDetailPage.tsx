@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Edit, Trash, Settings, Plus, BarChart } from "lucide-react";
+import { Edit, Trash, Settings, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +17,7 @@ import StationStatusIndicator from "@/components/stations/StationStatusIndicator
 import ReadingsChart from "@/components/readings/ReadingsChart";
 import ParameterCard from "@/components/readings/ParameterCard";
 import { Station, Reading, Alert } from "@/types";
+import { ParameterStatus } from "@/components/readings/ParameterCard";
 import { useToast } from "@/hooks/use-toast";
 
 // Mock data - using the same as in Dashboard.tsx
@@ -33,19 +33,6 @@ const mockStations: Station[] = [
     ownerId: "user1",
     createdAt: "2023-01-15T12:00:00Z",
     updatedAt: "2023-05-20T14:30:00Z",
-    lastReading: {
-      id: "r1",
-      stationId: "1",
-      timestamp: "2023-05-20T14:30:00Z",
-      parameters: {
-        temperature: 18.5,
-        pH: 7.2,
-        dissolvedOxygen: 8.1,
-        turbidity: 5.2,
-        tds: 120,
-        conductivity: 250
-      }
-    }
   },
   {
     id: "2",
@@ -58,19 +45,6 @@ const mockStations: Station[] = [
     ownerId: "user1",
     createdAt: "2023-02-20T10:15:00Z",
     updatedAt: "2023-05-21T09:45:00Z",
-    lastReading: {
-      id: "r2",
-      stationId: "2",
-      timestamp: "2023-05-21T09:45:00Z",
-      parameters: {
-        temperature: 15.2,
-        pH: 6.9,
-        dissolvedOxygen: 9.3,
-        turbidity: 2.1,
-        tds: 85,
-        conductivity: 180
-      }
-    }
   },
   {
     id: "3",
@@ -83,19 +57,6 @@ const mockStations: Station[] = [
     ownerId: "user1",
     createdAt: "2023-03-05T08:30:00Z",
     updatedAt: "2023-05-10T11:20:00Z",
-    lastReading: {
-      id: "r3",
-      stationId: "3",
-      timestamp: "2023-05-10T11:20:00Z",
-      parameters: {
-        temperature: 16.8,
-        pH: 8.1,
-        dissolvedOxygen: 7.5,
-        turbidity: 8.7,
-        tds: 215,
-        conductivity: 390
-      }
-    }
   }
 ];
 
@@ -104,66 +65,61 @@ const mockReadings: Reading[] = [
     id: "r1",
     stationId: "1",
     timestamp: "2023-05-20T10:30:00Z",
-    parameters: {
-      temperature: 18.2,
-      pH: 7.2,
-      dissolvedOxygen: 8.0,
-      turbidity: 5.0,
-      tds: 118,
-      conductivity: 248
-    }
+    ph: 7.2,
+    temperature: 18.2,
+    dissolvedOxygen: 8.0,
+    turbidity: 5.0,
+    tds: 118,
+    conductivity: 248,
+    createdAt: "2023-05-20T10:30:00Z"
   },
   {
     id: "r2",
     stationId: "1",
     timestamp: "2023-05-20T11:30:00Z",
-    parameters: {
-      temperature: 18.3,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.1,
-      tds: 119,
-      conductivity: 249
-    }
+    ph: 7.2,
+    temperature: 18.3,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.1,
+    tds: 119,
+    conductivity: 249,
+    createdAt: "2023-05-20T11:30:00Z"
   },
   {
     id: "r3",
     stationId: "1",
     timestamp: "2023-05-20T12:30:00Z",
-    parameters: {
-      temperature: 18.4,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.1,
-      tds: 120,
-      conductivity: 250
-    }
+    ph: 7.2,
+    temperature: 18.4,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.1,
+    tds: 120,
+    conductivity: 250,
+    createdAt: "2023-05-20T12:30:00Z"
   },
   {
     id: "r4",
     stationId: "1",
     timestamp: "2023-05-20T13:30:00Z",
-    parameters: {
-      temperature: 18.5,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.2,
-      tds: 120,
-      conductivity: 250
-    }
+    ph: 7.2,
+    temperature: 18.5,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.2,
+    tds: 120,
+    conductivity: 250,
+    createdAt: "2023-05-20T13:30:00Z"
   },
   {
     id: "r5",
     stationId: "1",
     timestamp: "2023-05-20T14:30:00Z",
-    parameters: {
-      temperature: 18.5,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.2,
-      tds: 120,
-      conductivity: 250
-    }
+    ph: 7.2,
+    temperature: 18.5,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.2,
+    tds: 120,
+    conductivity: 250,
+    createdAt: "2023-05-20T14:30:00Z"
   }
 ];
 
@@ -171,7 +127,7 @@ const mockAlerts: Alert[] = [
   {
     id: "a1",
     stationId: "1",
-    parameter: "pH",
+    parameter: "ph",
     value: 8.7,
     timestamp: "2023-05-19T15:45:00Z",
     severity: "medium",
@@ -211,6 +167,7 @@ const StationDetailPage = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [latestReading, setLatestReading] = useState<Reading | null>(null);
 
   useEffect(() => {
     // Simulate fetching station details
@@ -227,6 +184,11 @@ const StationDetailPage = () => {
             (r) => r.stationId === id
           );
           setReadings(stationReadings);
+          
+          // Set the latest reading
+          if (stationReadings.length > 0) {
+            setLatestReading(stationReadings[stationReadings.length - 1]);
+          }
           
           // Get alerts for this station
           const stationAlerts = mockAlerts.filter(
@@ -342,7 +304,7 @@ const StationDetailPage = () => {
                 <div>
                   <h3 className="font-semibold">Coordinates</h3>
                   <p className="text-muted-foreground">
-                    {station.latitude.toFixed(4)}, {station.longitude.toFixed(4)}
+                    {station.latitude?.toFixed(4)}, {station.longitude?.toFixed(4)}
                   </p>
                 </div>
                 <div>
@@ -362,41 +324,41 @@ const StationDetailPage = () => {
           </Card>
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
-            {station.lastReading?.parameters && (
+            {latestReading && (
               <>
                 <ParameterCard
                   name="temperature"
-                  value={station.lastReading.parameters.temperature as number}
+                  value={latestReading.temperature || 0}
                   unit="°C"
                   status="good"
                 />
                 <ParameterCard
-                  name="pH"
-                  value={station.lastReading.parameters.pH as number}
+                  name="ph"
+                  value={latestReading.ph || 0}
                   unit=""
                   status="warning"
                 />
                 <ParameterCard
                   name="dissolvedOxygen"
-                  value={station.lastReading.parameters.dissolvedOxygen as number}
+                  value={latestReading.dissolvedOxygen || 0}
                   unit="mg/L"
                   status="good"
                 />
                 <ParameterCard
                   name="turbidity"
-                  value={station.lastReading.parameters.turbidity as number}
+                  value={latestReading.turbidity || 0}
                   unit="NTU"
                   status="good"
                 />
                 <ParameterCard
                   name="tds"
-                  value={station.lastReading.parameters.tds as number}
+                  value={latestReading.tds || 0}
                   unit="mg/L"
                   status="good"
                 />
                 <ParameterCard
                   name="conductivity"
-                  value={station.lastReading.parameters.conductivity as number}
+                  value={latestReading.conductivity || 0}
                   unit="μS/cm"
                   status="good"
                 />
@@ -446,22 +408,22 @@ const StationDetailPage = () => {
                           {new Date(reading.timestamp).toLocaleString()}
                         </td>
                         <td className="text-right p-2">
-                          {reading.parameters.temperature?.toFixed(1)} °C
+                          {reading.temperature?.toFixed(1)} °C
                         </td>
                         <td className="text-right p-2">
-                          {reading.parameters.pH?.toFixed(1)}
+                          {reading.ph?.toFixed(1)}
                         </td>
                         <td className="text-right p-2">
-                          {reading.parameters.dissolvedOxygen?.toFixed(1)} mg/L
+                          {reading.dissolvedOxygen?.toFixed(1)} mg/L
                         </td>
                         <td className="text-right p-2">
-                          {reading.parameters.turbidity?.toFixed(1)} NTU
+                          {reading.turbidity?.toFixed(1)} NTU
                         </td>
                         <td className="text-right p-2">
-                          {reading.parameters.tds?.toFixed(0)} mg/L
+                          {reading.tds?.toFixed(0)} mg/L
                         </td>
                         <td className="text-right p-2">
-                          {reading.parameters.conductivity?.toFixed(0)} μS/cm
+                          {reading.conductivity?.toFixed(0)} μS/cm
                         </td>
                       </tr>
                     ))}

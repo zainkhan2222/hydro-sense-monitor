@@ -1,6 +1,16 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { DashboardSummary, Alert, Reading } from "@/types";
+import { Alert, Reading } from "@/types";
+
+// Define DashboardSummary type locally to avoid importing from types
+export interface DashboardSummary {
+  totalStations: number;
+  activeStations: number;
+  totalAlerts: number;
+  unacknowledgedAlerts: number;
+  recentReadings: Reading[];
+  recentAlerts: Alert[];
+}
 
 export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   // Fetch total stations count
@@ -46,7 +56,7 @@ export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   }
 
   // Fetch recent readings
-  const { data: recentReadings, error: readingsError } = await supabase
+  const { data: recentReadingsData, error: readingsError } = await supabase
     .from("readings")
     .select(`
       *,
@@ -61,7 +71,7 @@ export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   }
 
   // Fetch recent alerts
-  const { data: recentAlerts, error: recentAlertsError } = await supabase
+  const { data: recentAlertsData, error: recentAlertsError } = await supabase
     .from("alerts")
     .select(`
       *,
@@ -76,7 +86,7 @@ export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   }
 
   // Transform readings to match our types
-  const transformedReadings: Reading[] = recentReadings.map((reading: any) => ({
+  const transformedReadings: Reading[] = recentReadingsData.map((reading: any) => ({
     id: reading.id,
     stationId: reading.station_id,
     timestamp: reading.timestamp,
@@ -92,7 +102,7 @@ export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   }));
 
   // Transform alerts to match our types
-  const transformedAlerts: Alert[] = recentAlerts.map((alert: any) => ({
+  const transformedAlerts: Alert[] = recentAlertsData.map((alert: any) => ({
     id: alert.id,
     stationId: alert.station_id,
     parameter: alert.parameter,

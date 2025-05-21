@@ -1,14 +1,25 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, BarChart } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import MainLayout from "@/components/layout/MainLayout";
 import StationCard from "@/components/stations/StationCard";
 import ReadingsChart from "@/components/readings/ReadingsChart";
 import ParameterCard from "@/components/readings/ParameterCard";
-import { Alert, DashboardSummary, Reading, Station } from "@/types";
+import { Alert, Reading, Station } from "@/types";
+import { ParameterStatus } from "@/components/readings/ParameterCard";
+
+// Define DashboardSummary type locally if needed
+interface DashboardSummary {
+  totalStations: number;
+  activeStations: number;
+  totalAlerts: number;
+  unacknowledgedAlerts: number;
+  recentReadings: Reading[];
+  recentAlerts: Alert[];
+}
 
 // Mock data
 const mockStations: Station[] = [
@@ -23,19 +34,6 @@ const mockStations: Station[] = [
     ownerId: "user1",
     createdAt: "2023-01-15T12:00:00Z",
     updatedAt: "2023-05-20T14:30:00Z",
-    lastReading: {
-      id: "r1",
-      stationId: "1",
-      timestamp: "2023-05-20T14:30:00Z",
-      parameters: {
-        temperature: 18.5,
-        pH: 7.2,
-        dissolvedOxygen: 8.1,
-        turbidity: 5.2,
-        tds: 120,
-        conductivity: 250
-      }
-    }
   },
   {
     id: "2",
@@ -48,19 +46,6 @@ const mockStations: Station[] = [
     ownerId: "user1",
     createdAt: "2023-02-20T10:15:00Z",
     updatedAt: "2023-05-21T09:45:00Z",
-    lastReading: {
-      id: "r2",
-      stationId: "2",
-      timestamp: "2023-05-21T09:45:00Z",
-      parameters: {
-        temperature: 15.2,
-        pH: 6.9,
-        dissolvedOxygen: 9.3,
-        turbidity: 2.1,
-        tds: 85,
-        conductivity: 180
-      }
-    }
   },
   {
     id: "3",
@@ -73,19 +58,6 @@ const mockStations: Station[] = [
     ownerId: "user1",
     createdAt: "2023-03-05T08:30:00Z",
     updatedAt: "2023-05-10T11:20:00Z",
-    lastReading: {
-      id: "r3",
-      stationId: "3",
-      timestamp: "2023-05-10T11:20:00Z",
-      parameters: {
-        temperature: 16.8,
-        pH: 8.1,
-        dissolvedOxygen: 7.5,
-        turbidity: 8.7,
-        tds: 215,
-        conductivity: 390
-      }
-    }
   }
 ];
 
@@ -94,66 +66,61 @@ const mockReadings: Reading[] = [
     id: "r1",
     stationId: "1",
     timestamp: "2023-05-20T10:30:00Z",
-    parameters: {
-      temperature: 18.2,
-      pH: 7.2,
-      dissolvedOxygen: 8.0,
-      turbidity: 5.0,
-      tds: 118,
-      conductivity: 248
-    }
+    ph: 7.2,
+    temperature: 18.2,
+    dissolvedOxygen: 8.0,
+    turbidity: 5.0,
+    tds: 118,
+    conductivity: 248,
+    createdAt: "2023-05-20T10:30:00Z",
   },
   {
     id: "r2",
     stationId: "1",
     timestamp: "2023-05-20T11:30:00Z",
-    parameters: {
-      temperature: 18.3,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.1,
-      tds: 119,
-      conductivity: 249
-    }
+    ph: 7.2,
+    temperature: 18.3,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.1,
+    tds: 119,
+    conductivity: 249,
+    createdAt: "2023-05-20T11:30:00Z",
   },
   {
     id: "r3",
     stationId: "1",
     timestamp: "2023-05-20T12:30:00Z",
-    parameters: {
-      temperature: 18.4,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.1,
-      tds: 120,
-      conductivity: 250
-    }
+    ph: 7.2,
+    temperature: 18.4,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.1,
+    tds: 120,
+    conductivity: 250,
+    createdAt: "2023-05-20T12:30:00Z",
   },
   {
     id: "r4",
     stationId: "1",
     timestamp: "2023-05-20T13:30:00Z",
-    parameters: {
-      temperature: 18.5,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.2,
-      tds: 120,
-      conductivity: 250
-    }
+    ph: 7.2,
+    temperature: 18.5,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.2,
+    tds: 120,
+    conductivity: 250,
+    createdAt: "2023-05-20T13:30:00Z",
   },
   {
     id: "r5",
     stationId: "1",
     timestamp: "2023-05-20T14:30:00Z",
-    parameters: {
-      temperature: 18.5,
-      pH: 7.2,
-      dissolvedOxygen: 8.1,
-      turbidity: 5.2,
-      tds: 120,
-      conductivity: 250
-    }
+    ph: 7.2,
+    temperature: 18.5,
+    dissolvedOxygen: 8.1,
+    turbidity: 5.2,
+    tds: 120,
+    conductivity: 250,
+    createdAt: "2023-05-20T14:30:00Z",
   }
 ];
 
@@ -161,7 +128,7 @@ const mockAlerts: Alert[] = [
   {
     id: "a1",
     stationId: "1",
-    parameter: "pH",
+    parameter: "ph",
     value: 8.7,
     timestamp: "2023-05-19T15:45:00Z",
     severity: "medium",
@@ -283,25 +250,25 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
-        {mockStations[0]?.lastReading?.parameters && (
+        {mockReadings[0] && (
           <>
             <ParameterCard
               name="temperature"
-              value={mockStations[0].lastReading.parameters.temperature as number}
+              value={mockReadings[0].temperature || 0}
               unit="°C"
               status="good"
               onClick={() => navigate("/stations/1/readings")}
             />
             <ParameterCard
-              name="pH"
-              value={mockStations[0].lastReading.parameters.pH as number}
+              name="ph"
+              value={mockReadings[0].ph || 0}
               unit=""
               status="warning"
               onClick={() => navigate("/stations/1/readings")}
             />
             <ParameterCard
               name="dissolvedOxygen"
-              value={mockStations[0].lastReading.parameters.dissolvedOxygen as number}
+              value={mockReadings[0].dissolvedOxygen || 0}
               unit="mg/L"
               status="good"
               onClick={() => navigate("/stations/1/readings")}

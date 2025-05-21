@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -18,20 +17,7 @@ const mockStations: Station[] = [
     isActive: true,
     ownerId: "user1",
     createdAt: "2023-01-15T12:00:00Z",
-    updatedAt: "2023-05-20T14:30:00Z",
-    lastReading: {
-      id: "r1",
-      stationId: "1",
-      timestamp: "2023-05-20T14:30:00Z",
-      parameters: {
-        temperature: 18.5,
-        pH: 7.2,
-        dissolvedOxygen: 8.1,
-        turbidity: 5.2,
-        tds: 120,
-        conductivity: 250
-      }
-    }
+    updatedAt: "2023-05-20T14:30:00Z"
   },
   {
     id: "2",
@@ -43,20 +29,7 @@ const mockStations: Station[] = [
     isActive: true,
     ownerId: "user1",
     createdAt: "2023-02-20T10:15:00Z",
-    updatedAt: "2023-05-21T09:45:00Z",
-    lastReading: {
-      id: "r2",
-      stationId: "2",
-      timestamp: "2023-05-21T09:45:00Z",
-      parameters: {
-        temperature: 15.2,
-        pH: 6.9,
-        dissolvedOxygen: 9.3,
-        turbidity: 2.1,
-        tds: 85,
-        conductivity: 180
-      }
-    }
+    updatedAt: "2023-05-21T09:45:00Z"
   }
 ];
 

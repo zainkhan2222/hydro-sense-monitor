@@ -1,7 +1,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ParameterStatus, ParameterType } from "@/types";
+import { ParameterType } from "@/types";
 import { cn } from "@/lib/utils";
+
+// Define ParameterStatus type locally since it's not in the types file
+export type ParameterStatus = 'good' | 'warning' | 'danger' | 'critical';
 
 interface ParameterCardProps {
   name: ParameterType | string;

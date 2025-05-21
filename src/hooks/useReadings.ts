@@ -26,17 +26,15 @@ export function useReadings(stationId?: string) {
     }
   });
   
-  const useReadingAnalysis = (parameter: string, startDate: Date, endDate: Date) => {
-    return useQuery({
-      queryKey: ["readings", "analysis", stationId, parameter, startDate, endDate],
-      queryFn: () => stationId ? fetchReadingsByDateRange(stationId, startDate, endDate) : [],
-      enabled: !!stationId
-    });
-  };
-  
   return {
     readingsQuery,
     createReadingMutation,
-    useReadingAnalysis
+    useReadingsByDateRange: (startDate: Date, endDate: Date) => {
+      return useQuery({
+        queryKey: ["readings", "dateRange", stationId, startDate, endDate],
+        queryFn: () => stationId ? fetchReadingsByDateRange(stationId, startDate, endDate) : [],
+        enabled: !!stationId
+      });
+    }
   };
 }
