@@ -1,16 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Alert, Reading } from "@/types";
-
-// Define DashboardSummary type locally to avoid importing from types
-export interface DashboardSummary {
-  totalStations: number;
-  activeStations: number;
-  totalAlerts: number;
-  unacknowledgedAlerts: number;
-  recentReadings: Reading[];
-  recentAlerts: Alert[];
-}
+import { Alert, Reading, DashboardSummary } from "@/types";
 
 export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   // Fetch total stations count

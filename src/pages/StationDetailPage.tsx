@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Edit, Trash, Settings, Plus } from "lucide-react";
@@ -474,26 +475,26 @@ const StationDetailPage = () => {
                           {alert.parameter.charAt(0).toUpperCase() + alert.parameter.slice(1)} Alert
                         </div>
                         <div className="text-sm text-muted-foreground">
+                          Value: {alert.value.toFixed(1)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
                           {new Date(alert.timestamp).toLocaleString()}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div
-                          className={`font-medium ${
-                            alert.severity === "low"
-                              ? "text-alert-low"
-                              : alert.severity === "medium"
-                              ? "text-alert-medium"
-                              : alert.severity === "high"
-                              ? "text-alert-high"
-                              : "text-alert-critical"
-                          }`}
-                        >
-                          {alert.value.toFixed(1)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="font-medium">
                           {alert.acknowledged ? "Acknowledged" : "Unacknowledged"}
                         </div>
+                        {alert.acknowledged && (
+                          <div className="text-sm text-muted-foreground">
+                            By: Admin
+                          </div>
+                        )}
+                        {!alert.acknowledged && (
+                          <Button variant="outline" size="sm">
+                            Acknowledge
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -506,89 +507,55 @@ const StationDetailPage = () => {
         <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>API Configuration</CardTitle>
+              <CardTitle>API Settings</CardTitle>
               <CardDescription>
-                Manage API keys and integration settings for this station
+                Configure API access for this station
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              <div className="space-y-2">
                 <h3 className="font-semibold">API Key</h3>
-                <div className="flex items-center mt-1">
-                  <div className="bg-muted p-2 rounded flex-1 font-mono text-sm">
-                    {station.apiKey || "••••••••••••••••••••••••••••••••••••••"}
-                  </div>
-                  <Button className="ml-2" variant="outline">
-                    Regenerate
-                  </Button>
+                <div className="flex gap-2">
+                  <Input type="password" value="••••••••••••••••••••••••••••••" readOnly />
+                  <Button variant="outline">Show</Button>
+                  <Button variant="outline">Regenerate</Button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Use this key to authenticate API requests for this station
+                <p className="text-sm text-muted-foreground">
+                  Use this API key to authenticate requests to the station's API endpoints
                 </p>
               </div>
-              <Separator />
-              <div>
-                <h3 className="font-semibold">Webhook URL</h3>
-                <div className="flex items-center mt-1">
-                  <Input
-                    placeholder="https://your-server.com/webhook"
-                    className="font-mono text-sm"
-                  />
-                  <Button className="ml-2" variant="outline">
-                    Save
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Receive webhook notifications when new readings are available
-                </p>
+              <div className="space-y-2">
+                <h3 className="font-semibold">API Endpoints</h3>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <div>
+                        <span className="font-mono bg-muted px-1 py-0.5 rounded text-sm">GET</span>{" "}
+                        <span className="font-mono">/api/stations/{id}/readings</span>
+                      </div>
+                      <div>
+                        <span className="font-mono bg-muted px-1 py-0.5 rounded text-sm">POST</span>{" "}
+                        <span className="font-mono">/api/stations/{id}/readings</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
-          
           <Card>
             <CardHeader>
-              <CardTitle>Connect a Device</CardTitle>
+              <CardTitle>Danger Zone</CardTitle>
               <CardDescription>
-                Link a physical sensor device to this monitoring station
+                Actions that cannot be undone
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Device
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Station Configuration</CardTitle>
-              <CardDescription>
-                Update the station's basic settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate(`/stations/${id}/edit`)}>
-                <Settings className="mr-2 h-4 w-4" />
-                Edit Station
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>
-                Destructive actions for this station
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                <Trash className="mr-2 h-4 w-4" />
                 {isDeleting ? "Deleting..." : "Delete Station"}
               </Button>
-              <p className="text-sm text-muted-foreground mt-2">
-                This action cannot be undone. All data associated with this station will be permanently deleted.
+              <p className="text-sm text-muted-foreground">
+                This will permanently delete the station and all its associated data
               </p>
             </CardContent>
           </Card>
