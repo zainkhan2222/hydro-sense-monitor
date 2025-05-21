@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import MainLayout from "@/components/layout/MainLayout";
 import StationStatusIndicator from "@/components/stations/StationStatusIndicator";
 import ReadingsChart from "@/components/readings/ReadingsChart";
