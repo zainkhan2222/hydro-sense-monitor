@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,22 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Station } from "@/types";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Define the validation schema using Zod
+const stationFormSchema = z.object({
+  name: z.string().min(1, "Station name is required"),
+  description: z.string().optional(),
+  location: z.string().min(1, "Location is required"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  isActive: z.boolean().default(true),
+});
+
+// Define the type based on the schema
+type StationFormValues = z.infer<typeof stationFormSchema>;
 
 interface StationFormProps {
   station?: Station;
@@ -28,50 +44,32 @@ const StationForm = ({ station, onSubmit }: StationFormProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState({
-    name: station?.name || "",
-    description: station?.description || "",
-    location: station?.location || "",
-    latitude: station?.latitude || 0,
-    longitude: station?.longitude || 0,
-    isActive: station?.isActive ?? true,
+  // Initialize the form with useForm hook and zodResolver for validation
+  const form = useForm<StationFormValues>({
+    resolver: zodResolver(stationFormSchema),
+    defaultValues: {
+      name: station?.name || "",
+      description: station?.description || "",
+      location: station?.location || "",
+      latitude: station?.latitude || 0,
+      longitude: station?.longitude || 0,
+      isActive: station?.isActive ?? true,
+    },
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isActive: checked }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFormSubmit = (data: StationFormValues) => {
     setIsSubmitting(true);
-
-    // Validate form data
-    if (!formData.name || !formData.location) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
 
     // This would be replaced with actual Supabase logic
     setTimeout(() => {
       if (onSubmit) {
-        onSubmit(formData);
+        onSubmit(data);
       } else {
         toast({
           title: isEditing ? "Station Updated" : "Station Created",
-          description: `${formData.name} has been ${isEditing ? "updated" : "created"} successfully`,
+          description: `${data.name} has been ${isEditing ? "updated" : "created"} successfully`,
         });
         navigate("/stations");
       }
@@ -81,96 +79,134 @@ const StationForm = ({ station, onSubmit }: StationFormProps) => {
 
   return (
     <Card>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4 pt-6">
-          <div className="space-y-2">
-            <FormLabel htmlFor="name">Station Name *</FormLabel>
-            <Input
-              id="name"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+          <CardContent className="space-y-4 pt-6">
+            <FormField
+              control={form.control}
               name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter station name"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Station Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter station name" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    A unique name to identify this monitoring station
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <FormDescription>
-              A unique name to identify this monitoring station
-            </FormDescription>
-          </div>
 
-          <div className="space-y-2">
-            <FormLabel htmlFor="description">Description</FormLabel>
-            <Textarea
-              id="description"
+            <FormField
+              control={form.control}
               name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Enter a detailed description of this station"
-              rows={3}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter a detailed description of this station" 
+                      rows={3} 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="space-y-2">
-            <FormLabel htmlFor="location">Location *</FormLabel>
-            <Input
-              id="location"
+            <FormField
+              control={form.control}
               name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="e.g., River Thames, London Bridge"
-              required
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g., River Thames, London Bridge" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <FormLabel htmlFor="latitude">Latitude</FormLabel>
-              <Input
-                id="latitude"
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
                 name="latitude"
-                type="number"
-                step="any"
-                value={formData.latitude}
-                onChange={handleChange}
-                placeholder="e.g., 51.5074"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Latitude</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="any" 
+                        placeholder="e.g., 51.5074"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <FormLabel htmlFor="longitude">Longitude</FormLabel>
-              <Input
-                id="longitude"
+              
+              <FormField
+                control={form.control}
                 name="longitude"
-                type="number"
-                step="any"
-                value={formData.longitude}
-                onChange={handleChange}
-                placeholder="e.g., -0.1278"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Longitude</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="any" 
+                        placeholder="e.g., -0.1278"
+                        {...field} 
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="isActive"
-              checked={formData.isActive}
-              onCheckedChange={handleSwitchChange}
+            <FormField
+              control={form.control}
+              name="isActive"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                  <FormControl>
+                    <Switch 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel>Active Station</FormLabel>
+                </FormItem>
+              )}
             />
-            <FormLabel htmlFor="isActive">Active Station</FormLabel>
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate("/stations")}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : isEditing ? "Update Station" : "Create Station"}
-          </Button>
-        </CardFooter>
-      </form>
+          </CardContent>
+          
+          <CardFooter className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/stations")}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : isEditing ? "Update Station" : "Create Station"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 };
