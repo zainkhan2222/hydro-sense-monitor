@@ -1,95 +1,152 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Device } from "@/types";
+import { Device, DeviceType, DeviceStatus, ParameterType } from "@/types";
 
-export const fetchDevicesByStationId = async (stationId: string): Promise<Device[]> => {
+export const fetchDevices = async (): Promise<Device[]> => {
+  const { data, error } = await supabase
+    .from("devices")
+    .select("*");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Transform the data to match the Device interface
+  const devices: Device[] = data.map((device) => ({
+    id: device.id,
+    name: device.name,
+    type: device.type as DeviceType,
+    stationId: device.station_id,
+    status: device.status as DeviceStatus,
+    lastConnection: device.last_connection,
+    firmwareVersion: device.firmware_version || "",
+    supportedParameters: device.supported_parameters as ParameterType[],
+    createdAt: device.created_at,
+    updatedAt: device.updated_at
+  }));
+
+  return devices;
+};
+
+export const fetchDevicesByStation = async (stationId: string): Promise<Device[]> => {
   const { data, error } = await supabase
     .from("devices")
     .select("*")
     .eq("station_id", stationId);
 
   if (error) {
-    console.error("Error fetching devices:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
-  // Transform the data to match our types
-  return data.map((device) => ({
+  // Transform the data to match the Device interface
+  const devices: Device[] = data.map((device) => ({
     id: device.id,
     name: device.name,
-    type: device.type as any,
+    type: device.type as DeviceType,
     stationId: device.station_id,
-    status: device.status as any,
+    status: device.status as DeviceStatus,
     lastConnection: device.last_connection,
-    firmwareVersion: device.firmware_version,
-    supportedParameters: device.supported_parameters,
+    firmwareVersion: device.firmware_version || "",
+    supportedParameters: device.supported_parameters as ParameterType[],
     createdAt: device.created_at,
     updatedAt: device.updated_at
   }));
+
+  return devices;
 };
 
-export const createDevice = async (deviceData: Partial<Device>): Promise<Device> => {
+export const fetchDevice = async (id: string): Promise<Device> => {
+  const { data, error } = await supabase
+    .from("devices")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Transform the data to match the Device interface
+  const device: Device = {
+    id: data.id,
+    name: data.name,
+    type: data.type as DeviceType,
+    stationId: data.station_id,
+    status: data.status as DeviceStatus,
+    lastConnection: data.last_connection,
+    firmwareVersion: data.firmware_version || "",
+    supportedParameters: data.supported_parameters as ParameterType[],
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+
+  return device;
+};
+
+export const createDevice = async (
+  device: Omit<Device, "id" | "createdAt" | "updatedAt">
+): Promise<Device> => {
   const { data, error } = await supabase
     .from("devices")
     .insert({
-      name: deviceData.name,
-      type: deviceData.type,
-      station_id: deviceData.stationId,
-      status: deviceData.status || "offline",
-      firmware_version: deviceData.firmwareVersion,
-      supported_parameters: deviceData.supportedParameters || []
+      name: device.name,
+      type: device.type,
+      station_id: device.stationId,
+      status: device.status,
+      firmware_version: device.firmwareVersion,
+      supported_parameters: device.supportedParameters
     })
     .select()
     .single();
 
   if (error) {
-    console.error("Error creating device:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
+  // Transform the data to match the Device interface
   return {
     id: data.id,
     name: data.name,
-    type: data.type as any,
+    type: data.type as DeviceType,
     stationId: data.station_id,
-    status: data.status as any,
+    status: data.status as DeviceStatus,
     lastConnection: data.last_connection,
-    firmwareVersion: data.firmware_version,
-    supportedParameters: data.supported_parameters,
+    firmwareVersion: data.firmware_version || "",
+    supportedParameters: data.supported_parameters as ParameterType[],
     createdAt: data.created_at,
     updatedAt: data.updated_at
   };
 };
 
-export const updateDevice = async (id: string, deviceData: Partial<Device>): Promise<Device> => {
+export const updateDevice = async (device: Partial<Device> & { id: string }): Promise<Device> => {
   const { data, error } = await supabase
     .from("devices")
     .update({
-      name: deviceData.name,
-      type: deviceData.type,
-      status: deviceData.status,
-      firmware_version: deviceData.firmwareVersion,
-      supported_parameters: deviceData.supportedParameters,
-      updated_at: new Date().toISOString()
+      name: device.name,
+      type: device.type,
+      status: device.status,
+      firmware_version: device.firmwareVersion,
+      supported_parameters: device.supportedParameters,
+      last_connection: device.lastConnection
     })
-    .eq("id", id)
+    .eq("id", device.id)
     .select()
     .single();
 
   if (error) {
-    console.error("Error updating device:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
+  // Transform the data to match the Device interface
   return {
     id: data.id,
     name: data.name,
-    type: data.type as any,
+    type: data.type as DeviceType,
     stationId: data.station_id,
-    status: data.status as any,
+    status: data.status as DeviceStatus,
     lastConnection: data.last_connection,
-    firmwareVersion: data.firmware_version,
-    supportedParameters: data.supported_parameters,
+    firmwareVersion: data.firmware_version || "",
+    supportedParameters: data.supported_parameters as ParameterType[],
     createdAt: data.created_at,
     updatedAt: data.updated_at
   };
@@ -102,23 +159,6 @@ export const deleteDevice = async (id: string): Promise<void> => {
     .eq("id", id);
 
   if (error) {
-    console.error("Error deleting device:", error);
-    throw error;
-  }
-};
-
-export const updateDeviceStatus = async (id: string, status: 'online' | 'offline' | 'maintenance'): Promise<void> => {
-  const { error } = await supabase
-    .from("devices")
-    .update({
-      status: status,
-      last_connection: status === 'online' ? new Date().toISOString() : undefined,
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", id);
-
-  if (error) {
-    console.error("Error updating device status:", error);
-    throw error;
+    throw new Error(error.message);
   }
 };

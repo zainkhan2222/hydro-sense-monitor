@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Reading } from "@/types";
 
-export const fetchReadingsByStationId = async (stationId: string, limit: number = 50): Promise<Reading[]> => {
+export const fetchReadings = async (stationId: string, limit = 100): Promise<Reading[]> => {
   const { data, error } = await supabase
     .from("readings")
     .select("*")
@@ -11,101 +11,128 @@ export const fetchReadingsByStationId = async (stationId: string, limit: number 
     .limit(limit);
 
   if (error) {
-    console.error("Error fetching readings:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
-  // Transform the data to match our types
-  return data.map((reading) => ({
+  // Transform the data to match the Reading interface
+  const readings: Reading[] = data.map((reading) => ({
     id: reading.id,
     stationId: reading.station_id,
     timestamp: reading.timestamp,
     deviceId: reading.device_id,
-    parameters: {
-      pH: reading.ph,
-      temperature: reading.temperature,
-      dissolvedOxygen: reading.dissolved_oxygen,
-      turbidity: reading.turbidity,
-      tds: reading.tds,
-      conductivity: reading.conductivity,
-    }
+    ph: reading.ph,
+    temperature: reading.temperature,
+    dissolvedOxygen: reading.dissolved_oxygen,
+    turbidity: reading.turbidity,
+    tds: reading.tds,
+    conductivity: reading.conductivity,
+    createdAt: reading.created_at
   }));
+
+  return readings;
 };
 
-export const createReading = async (readingData: Partial<Reading>): Promise<Reading> => {
+export const fetchRecentReadings = async (stationId: string, hours = 24): Promise<Reading[]> => {
+  const startDate = new Date();
+  startDate.setHours(startDate.getHours() - hours);
+  
   const { data, error } = await supabase
     .from("readings")
-    .insert({
-      station_id: readingData.stationId,
-      device_id: readingData.deviceId,
-      ph: readingData.parameters?.pH,
-      temperature: readingData.parameters?.temperature,
-      dissolved_oxygen: readingData.parameters?.dissolvedOxygen,
-      turbidity: readingData.parameters?.turbidity,
-      tds: readingData.parameters?.tds,
-      conductivity: readingData.parameters?.conductivity,
-      timestamp: readingData.timestamp || new Date().toISOString(),
-    })
-    .select()
-    .single();
+    .select("*")
+    .eq("station_id", stationId)
+    .gte("timestamp", startDate.toISOString())
+    .order("timestamp", { ascending: true });
 
   if (error) {
-    console.error("Error creating reading:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
-  return {
-    id: data.id,
-    stationId: data.station_id,
-    timestamp: data.timestamp,
-    deviceId: data.device_id,
-    parameters: {
-      pH: data.ph,
-      temperature: data.temperature,
-      dissolvedOxygen: data.dissolved_oxygen,
-      turbidity: data.turbidity,
-      tds: data.tds,
-      conductivity: data.conductivity,
-    }
-  };
+  // Transform the data to match the Reading interface
+  const readings: Reading[] = data.map((reading) => ({
+    id: reading.id,
+    stationId: reading.station_id,
+    timestamp: reading.timestamp,
+    deviceId: reading.device_id,
+    ph: reading.ph,
+    temperature: reading.temperature,
+    dissolvedOxygen: reading.dissolved_oxygen,
+    turbidity: reading.turbidity,
+    tds: reading.tds,
+    conductivity: reading.conductivity,
+    createdAt: reading.created_at
+  }));
+
+  return readings;
 };
 
-export const fetchReadingsForAnalysis = async (
-  stationId: string, 
-  parameter: string, 
-  startDate: Date, 
+export const fetchReadingsByDateRange = async (
+  stationId: string,
+  startDate: Date,
   endDate: Date
-): Promise<{ timestamp: string; value: number }[]> => {
-  // Convert parameter name to database column name
-  const parameterMap: { [key: string]: string } = {
-    "pH": "ph",
-    "temperature": "temperature",
-    "dissolvedOxygen": "dissolved_oxygen",
-    "turbidity": "turbidity",
-    "tds": "tds",
-    "conductivity": "conductivity"
-  };
-  
-  const columnName = parameterMap[parameter] || parameter;
-  
+): Promise<Reading[]> => {
   const { data, error } = await supabase
     .from("readings")
-    .select(`timestamp, ${columnName}`)
+    .select("*")
     .eq("station_id", stationId)
     .gte("timestamp", startDate.toISOString())
     .lte("timestamp", endDate.toISOString())
     .order("timestamp", { ascending: true });
 
   if (error) {
-    console.error("Error fetching readings for analysis:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
-  // Transform the data to a format suitable for charts
-  return data
-    .filter(item => item[columnName] !== null) // Filter out null values
-    .map((item) => ({
-      timestamp: item.timestamp,
-      value: item[columnName]
-    }));
+  // Transform the data to match the Reading interface
+  const readings: Reading[] = data.map((reading) => ({
+    id: reading.id,
+    stationId: reading.station_id,
+    timestamp: reading.timestamp,
+    deviceId: reading.device_id,
+    ph: reading.ph,
+    temperature: reading.temperature,
+    dissolvedOxygen: reading.dissolved_oxygen,
+    turbidity: reading.turbidity,
+    tds: reading.tds,
+    conductivity: reading.conductivity,
+    createdAt: reading.created_at
+  }));
+
+  return readings;
+};
+
+export const createReading = async (reading: Omit<Reading, "id" | "createdAt">): Promise<Reading> => {
+  const { data, error } = await supabase
+    .from("readings")
+    .insert({
+      station_id: reading.stationId,
+      timestamp: reading.timestamp,
+      device_id: reading.deviceId,
+      ph: reading.ph,
+      temperature: reading.temperature,
+      dissolved_oxygen: reading.dissolvedOxygen,
+      turbidity: reading.turbidity,
+      tds: reading.tds,
+      conductivity: reading.conductivity
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Transform the data to match the Reading interface
+  return {
+    id: data.id,
+    stationId: data.station_id,
+    timestamp: data.timestamp,
+    deviceId: data.device_id,
+    ph: data.ph,
+    temperature: data.temperature,
+    dissolvedOxygen: data.dissolved_oxygen,
+    turbidity: data.turbidity,
+    tds: data.tds,
+    conductivity: data.conductivity,
+    createdAt: data.created_at
+  };
 };

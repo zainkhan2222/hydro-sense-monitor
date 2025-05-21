@@ -1,36 +1,22 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Station } from "@/types";
+import { Device, DeviceType, DeviceStatus, ParameterType, Station } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const fetchStations = async (): Promise<Station[]> => {
   const { data, error } = await supabase
     .from("stations")
-    .select(`
-      *,
-      lastReading:readings(
-        id,
-        timestamp,
-        ph,
-        temperature,
-        dissolved_oxygen,
-        turbidity,
-        tds,
-        conductivity
-      )
-    `)
-    .order("created_at", { ascending: false })
-    .limit(1, { foreignTable: "readings" });
+    .select("*");
 
   if (error) {
-    console.error("Error fetching stations:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
-  // Transform the data to match our types
-  return data.map((station) => ({
+  // Transform the data to match the Station interface
+  const stations: Station[] = data.map((station) => ({
     id: station.id,
     name: station.name,
-    description: station.description || "",
+    description: station.description,
     location: station.location,
     latitude: station.latitude,
     longitude: station.longitude,
@@ -38,43 +24,58 @@ export const fetchStations = async (): Promise<Station[]> => {
     apiKey: station.api_key,
     ownerId: station.owner_id,
     createdAt: station.created_at,
-    updatedAt: station.updated_at,
-    lastReading: station.lastReading?.[0] ? {
-      id: station.lastReading[0].id,
-      stationId: station.id,
-      timestamp: station.lastReading[0].timestamp,
-      parameters: {
-        pH: station.lastReading[0].ph,
-        temperature: station.lastReading[0].temperature,
-        dissolvedOxygen: station.lastReading[0].dissolved_oxygen,
-        turbidity: station.lastReading[0].turbidity,
-        tds: station.lastReading[0].tds,
-        conductivity: station.lastReading[0].conductivity,
-      }
-    } : undefined
+    updatedAt: station.updated_at
   }));
+
+  return stations;
 };
 
-export const fetchStationById = async (id: string): Promise<Station> => {
+export const fetchStation = async (id: string): Promise<Station> => {
+  const { data, error } = await supabase
+    .from("stations")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Transform the data to match the Station interface
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    location: data.location,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    isActive: data.is_active,
+    apiKey: data.api_key,
+    ownerId: data.owner_id,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+};
+
+export const fetchStationWithDevices = async (id: string): Promise<Station & { devices: Device[] }> => {
   const { data, error } = await supabase
     .from("stations")
     .select(`
       *,
-      devices(*)
+      devices:devices(*)
     `)
     .eq("id", id)
     .single();
 
   if (error) {
-    console.error("Error fetching station:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
-  // Transform the data to match our types
-  return {
+  // Transform the data to match the Station interface with devices
+  const station: Station & { devices: Device[] } = {
     id: data.id,
     name: data.name,
-    description: data.description || "",
+    description: data.description,
     location: data.location,
     latitude: data.latitude,
     longitude: data.longitude,
@@ -83,44 +84,55 @@ export const fetchStationById = async (id: string): Promise<Station> => {
     ownerId: data.owner_id,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    devices: data.devices?.map((device) => ({
+    devices: data.devices.map((device: any) => ({
       id: device.id,
       name: device.name,
-      type: device.type,
+      type: device.type as DeviceType,
       stationId: device.station_id,
-      status: device.status,
+      status: device.status as DeviceStatus,
       lastConnection: device.last_connection,
-      firmwareVersion: device.firmware_version,
-      supportedParameters: device.supported_parameters,
+      firmwareVersion: device.firmware_version || "",
+      supportedParameters: device.supported_parameters as ParameterType[],
       createdAt: device.created_at,
-      updatedAt: device.updated_at,
+      updatedAt: device.updated_at
     }))
   };
+
+  return station;
 };
 
-export const createStation = async (stationData: Partial<Station>): Promise<Station> => {
+export const createStation = async (
+  station: Omit<Station, "id" | "apiKey" | "ownerId" | "createdAt" | "updatedAt">
+): Promise<Station> => {
+  // Get the current user id
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) {
+    throw new Error("User must be logged in to create a station");
+  }
+
   const { data, error } = await supabase
     .from("stations")
     .insert({
-      name: stationData.name,
-      description: stationData.description,
-      location: stationData.location,
-      latitude: stationData.latitude,
-      longitude: stationData.longitude,
-      is_active: stationData.isActive ?? true,
+      name: station.name,
+      description: station.description,
+      location: station.location,
+      latitude: station.latitude,
+      longitude: station.longitude,
+      is_active: station.isActive,
+      owner_id: session.user.id
     })
     .select()
     .single();
 
   if (error) {
-    console.error("Error creating station:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
+  // Transform the data to match the Station interface
   return {
     id: data.id,
     name: data.name,
-    description: data.description || "",
+    description: data.description,
     location: data.location,
     latitude: data.latitude,
     longitude: data.longitude,
@@ -128,35 +140,34 @@ export const createStation = async (stationData: Partial<Station>): Promise<Stat
     apiKey: data.api_key,
     ownerId: data.owner_id,
     createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    updatedAt: data.updated_at
   };
 };
 
-export const updateStation = async (id: string, stationData: Partial<Station>): Promise<Station> => {
+export const updateStation = async (station: Partial<Station> & { id: string }): Promise<Station> => {
   const { data, error } = await supabase
     .from("stations")
     .update({
-      name: stationData.name,
-      description: stationData.description,
-      location: stationData.location,
-      latitude: stationData.latitude,
-      longitude: stationData.longitude,
-      is_active: stationData.isActive,
-      updated_at: new Date().toISOString(),
+      name: station.name,
+      description: station.description,
+      location: station.location,
+      latitude: station.latitude,
+      longitude: station.longitude,
+      is_active: station.isActive
     })
-    .eq("id", id)
+    .eq("id", station.id)
     .select()
     .single();
 
   if (error) {
-    console.error("Error updating station:", error);
-    throw error;
+    throw new Error(error.message);
   }
 
+  // Transform the data to match the Station interface
   return {
     id: data.id,
     name: data.name,
-    description: data.description || "",
+    description: data.description,
     location: data.location,
     latitude: data.latitude,
     longitude: data.longitude,
@@ -164,7 +175,7 @@ export const updateStation = async (id: string, stationData: Partial<Station>): 
     apiKey: data.api_key,
     ownerId: data.owner_id,
     createdAt: data.created_at,
-    updatedAt: data.updated_at,
+    updatedAt: data.updated_at
   };
 };
 
@@ -175,27 +186,6 @@ export const deleteStation = async (id: string): Promise<void> => {
     .eq("id", id);
 
   if (error) {
-    console.error("Error deleting station:", error);
-    throw error;
+    throw new Error(error.message);
   }
-};
-
-export const regenerateApiKey = async (id: string): Promise<string> => {
-  // Generate a new API key
-  const newApiKey = crypto.randomUUID();
-  
-  const { error } = await supabase
-    .from("stations")
-    .update({
-      api_key: newApiKey,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
-
-  if (error) {
-    console.error("Error regenerating API key:", error);
-    throw error;
-  }
-
-  return newApiKey;
 };
