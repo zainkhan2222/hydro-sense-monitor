@@ -14,21 +14,21 @@ interface ParameterCardProps {
 const getStatusClass = (status: ParameterStatus): string => {
   switch (status) {
     case "good":
-      return "parameter-good";
+      return "bg-green-500";
     case "warning":
-      return "parameter-warning";
+      return "bg-yellow-500";
     case "danger":
-      return "parameter-danger";
+      return "bg-orange-500";
     case "critical":
-      return "parameter-critical";
+      return "bg-red-500";
     default:
-      return "";
+      return "bg-gray-500";
   }
 };
 
 const formatParameterName = (name: string): string => {
   switch (name) {
-    case "pH":
+    case "ph":
       return "pH";
     case "tds":
       return "TDS";
@@ -55,7 +55,7 @@ const ParameterCard = ({ name, value, unit, status, onClick }: ParameterCardProp
           <div className="text-3xl font-bold">{value.toFixed(1)}</div>
           <div className="text-sm text-muted-foreground mb-1">{unit}</div>
         </div>
-        <div className={cn("text-sm mt-1", `text-${status}`)}>
+        <div className="text-sm mt-1">
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </div>
       </CardContent>

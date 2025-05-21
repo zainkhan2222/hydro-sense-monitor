@@ -7,6 +7,8 @@ export type DeviceType = 'arduino' | 'esp32' | 'raspberry_pi' | 'other';
 
 export type DeviceStatus = 'online' | 'offline' | 'maintenance';
 
+export type ParameterStatus = 'good' | 'warning' | 'danger' | 'critical';
+
 export interface Device {
   id: string;
   name: string;
@@ -32,6 +34,8 @@ export interface Reading {
   tds?: number;
   conductivity?: number;
   createdAt: string;
+  // For UI component compatibility
+  stationName?: string;
 }
 
 export interface Threshold {
@@ -59,6 +63,8 @@ export interface Alert {
   acknowledgedBy?: string;
   acknowledgedAt?: string;
   readingId: string;
+  // For UI component compatibility
+  stationName?: string;
 }
 
 export interface Station {
@@ -73,4 +79,16 @@ export interface Station {
   ownerId: string;
   createdAt: string;
   updatedAt: string;
+  // For UI component compatibility - will be populated when needed
+  lastReading?: Reading;
+  devices?: Device[];
+}
+
+export interface DashboardSummary {
+  totalStations: number;
+  activeStations: number;
+  totalAlerts: number;
+  unacknowledgedAlerts: number;
+  recentReadings: Reading[];
+  recentAlerts: Alert[];
 }

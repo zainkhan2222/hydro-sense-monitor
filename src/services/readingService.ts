@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Reading } from "@/types";
+import { Reading, ParameterType } from "@/types";
 
 export const fetchReadings = async (stationId: string, limit = 100): Promise<Reading[]> => {
   const { data, error } = await supabase
@@ -135,4 +135,15 @@ export const createReading = async (reading: Omit<Reading, "id" | "createdAt">):
     conductivity: data.conductivity,
     createdAt: data.created_at
   };
+};
+
+// For compatibility with existing code
+export const fetchReadingsByStationId = fetchReadings;
+export const fetchReadingsForAnalysis = async (
+  stationId: string,
+  parameter: string,
+  startDate: Date,
+  endDate: Date
+): Promise<Reading[]> => {
+  return fetchReadingsByDateRange(stationId, startDate, endDate);
 };

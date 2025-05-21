@@ -94,7 +94,8 @@ export const createDevice = async (
       station_id: device.stationId,
       status: device.status,
       firmware_version: device.firmwareVersion,
-      supported_parameters: device.supportedParameters
+      supported_parameters: device.supportedParameters,
+      last_connection: device.lastConnection,
     })
     .select()
     .single();
@@ -118,18 +119,23 @@ export const createDevice = async (
   };
 };
 
-export const updateDevice = async (device: Partial<Device> & { id: string }): Promise<Device> => {
+export const updateDevice = async (
+  id: string,
+  device: Partial<Device>
+): Promise<Device> => {
+  const updateData = {
+    name: device.name,
+    type: device.type,
+    status: device.status,
+    firmware_version: device.firmwareVersion,
+    supported_parameters: device.supportedParameters,
+    last_connection: device.lastConnection
+  };
+
   const { data, error } = await supabase
     .from("devices")
-    .update({
-      name: device.name,
-      type: device.type,
-      status: device.status,
-      firmware_version: device.firmwareVersion,
-      supported_parameters: device.supportedParameters,
-      last_connection: device.lastConnection
-    })
-    .eq("id", device.id)
+    .update(updateData)
+    .eq("id", id)
     .select()
     .single();
 
@@ -161,4 +167,10 @@ export const deleteDevice = async (id: string): Promise<void> => {
   if (error) {
     throw new Error(error.message);
   }
+};
+
+// For compatibility with existing code, provide alias functions
+export const fetchDevicesByStationId = fetchDevicesByStation;
+export const updateDeviceStatus = (id: string, status: DeviceStatus): Promise<Device> => {
+  return updateDevice(id, { status });
 };

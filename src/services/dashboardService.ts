@@ -76,30 +76,29 @@ export const fetchDashboardSummary = async (): Promise<DashboardSummary> => {
   }
 
   // Transform readings to match our types
-  const transformedReadings: Reading[] = recentReadings.map((reading) => ({
+  const transformedReadings: Reading[] = recentReadings.map((reading: any) => ({
     id: reading.id,
     stationId: reading.station_id,
     timestamp: reading.timestamp,
     deviceId: reading.device_id,
-    parameters: {
-      pH: reading.ph,
-      temperature: reading.temperature,
-      dissolvedOxygen: reading.dissolved_oxygen,
-      turbidity: reading.turbidity,
-      tds: reading.tds,
-      conductivity: reading.conductivity,
-    },
+    ph: reading.ph,
+    temperature: reading.temperature,
+    dissolvedOxygen: reading.dissolved_oxygen,
+    turbidity: reading.turbidity,
+    tds: reading.tds,
+    conductivity: reading.conductivity,
+    createdAt: reading.created_at,
     stationName: reading.stations?.name
   }));
 
   // Transform alerts to match our types
-  const transformedAlerts: Alert[] = recentAlerts.map((alert) => ({
+  const transformedAlerts: Alert[] = recentAlerts.map((alert: any) => ({
     id: alert.id,
     stationId: alert.station_id,
-    parameter: alert.parameter as any,
+    parameter: alert.parameter,
     value: alert.value,
     timestamp: alert.timestamp,
-    severity: alert.severity as any,
+    severity: alert.severity,
     acknowledged: alert.acknowledged,
     acknowledgedBy: alert.acknowledged_by,
     acknowledgedAt: alert.acknowledged_at,

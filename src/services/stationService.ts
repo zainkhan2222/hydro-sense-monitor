@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Device, DeviceType, DeviceStatus, ParameterType, Station } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
+import { Station } from "@/types";
 
 export const fetchStations = async (): Promise<Station[]> => {
   const { data, error } = await supabase
@@ -57,7 +56,7 @@ export const fetchStation = async (id: string): Promise<Station> => {
   };
 };
 
-export const fetchStationWithDevices = async (id: string): Promise<Station & { devices: Device[] }> => {
+export const fetchStationWithDevices = async (id: string): Promise<Station> => {
   const { data, error } = await supabase
     .from("stations")
     .select(`
@@ -72,7 +71,20 @@ export const fetchStationWithDevices = async (id: string): Promise<Station & { d
   }
 
   // Transform the data to match the Station interface with devices
-  const station: Station & { devices: Device[] } = {
+  const devices = data.devices.map((device: any) => ({
+    id: device.id,
+    name: device.name,
+    type: device.type,
+    stationId: device.station_id,
+    status: device.status,
+    lastConnection: device.last_connection,
+    firmwareVersion: device.firmware_version || "",
+    supportedParameters: device.supported_parameters,
+    createdAt: device.created_at,
+    updatedAt: device.updated_at
+  }));
+
+  return {
     id: data.id,
     name: data.name,
     description: data.description,
@@ -84,21 +96,8 @@ export const fetchStationWithDevices = async (id: string): Promise<Station & { d
     ownerId: data.owner_id,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    devices: data.devices.map((device: any) => ({
-      id: device.id,
-      name: device.name,
-      type: device.type as DeviceType,
-      stationId: device.station_id,
-      status: device.status as DeviceStatus,
-      lastConnection: device.last_connection,
-      firmwareVersion: device.firmware_version || "",
-      supportedParameters: device.supported_parameters as ParameterType[],
-      createdAt: device.created_at,
-      updatedAt: device.updated_at
-    }))
+    devices
   };
-
-  return station;
 };
 
 export const createStation = async (
@@ -144,7 +143,10 @@ export const createStation = async (
   };
 };
 
-export const updateStation = async (station: Partial<Station> & { id: string }): Promise<Station> => {
+export const updateStation = async (
+  id: string,
+  station: Partial<Station>
+): Promise<Station> => {
   const { data, error } = await supabase
     .from("stations")
     .update({
@@ -155,7 +157,7 @@ export const updateStation = async (station: Partial<Station> & { id: string }):
       longitude: station.longitude,
       is_active: station.isActive
     })
-    .eq("id", station.id)
+    .eq("id", id)
     .select()
     .single();
 
@@ -189,3 +191,38 @@ export const deleteStation = async (id: string): Promise<void> => {
     throw new Error(error.message);
   }
 };
+
+export const regenerateApiKey = async (id: string): Promise<Station> => {
+  // Generate a new API key and update the station
+  const newApiKey = Math.random().toString(36).substring(2, 15) + 
+                   Math.random().toString(36).substring(2, 15);
+  
+  const { data, error } = await supabase
+    .from("stations")
+    .update({ api_key: newApiKey })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Transform the data to match the Station interface
+  return {
+    id: data.id,
+    name: data.name,
+    description: data.description,
+    location: data.location,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    isActive: data.is_active,
+    apiKey: data.api_key,
+    ownerId: data.owner_id,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
+  };
+};
+
+// For compatibility
+export const fetchStationById = fetchStation;

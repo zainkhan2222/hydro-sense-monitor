@@ -1,6 +1,13 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchStations, fetchStationById, createStation, updateStation, deleteStation, regenerateApiKey } from "@/services/stationService";
+import { 
+  fetchStations, 
+  fetchStation, 
+  createStation, 
+  updateStation, 
+  deleteStation, 
+  regenerateApiKey 
+} from "@/services/stationService";
 import { Station } from "@/types";
 
 export function useStations() {
@@ -12,7 +19,8 @@ export function useStations() {
   });
   
   const createStationMutation = useMutation({
-    mutationFn: (stationData: Partial<Station>) => createStation(stationData),
+    mutationFn: (stationData: Omit<Station, "id" | "apiKey" | "ownerId" | "createdAt" | "updatedAt">) => 
+      createStation(stationData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stations"] });
     }
@@ -52,7 +60,7 @@ export function useStations() {
     useStation: (id?: string) => {
       return useQuery({
         queryKey: ["station", id],
-        queryFn: () => id ? fetchStationById(id) : null,
+        queryFn: () => id ? fetchStation(id) : null,
         enabled: !!id // Only run the query if we have an id
       });
     }

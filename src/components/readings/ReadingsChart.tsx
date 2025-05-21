@@ -25,8 +25,8 @@ interface ReadingsChartProps {
   title?: string;
 }
 
-const colorMap = {
-  pH: "#2196F3",
+const colorMap: Record<string, string> = {
+  ph: "#2196F3",
   temperature: "#FF9800",
   dissolvedOxygen: "#4CAF50",
   turbidity: "#9C27B0",
@@ -34,8 +34,8 @@ const colorMap = {
   conductivity: "#F44336",
 };
 
-const unitMap = {
-  pH: "",
+const unitMap: Record<string, string> = {
+  ph: "",
   temperature: "°C",
   dissolvedOxygen: "mg/L",
   turbidity: "NTU",
@@ -52,7 +52,12 @@ const ReadingsChart = ({ readings, title = "Water Quality Readings" }: ReadingsC
     if (readings && readings.length > 0) {
       const data = readings.map((reading) => ({
         time: new Date(reading.timestamp).toLocaleString(),
-        ...reading.parameters,
+        ph: reading.ph,
+        temperature: reading.temperature,
+        dissolvedOxygen: reading.dissolvedOxygen,
+        turbidity: reading.turbidity,
+        tds: reading.tds,
+        conductivity: reading.conductivity
       }));
       setChartData(data);
     }
@@ -60,7 +65,7 @@ const ReadingsChart = ({ readings, title = "Water Quality Readings" }: ReadingsC
 
   const formatParameterName = (name: string): string => {
     switch (name) {
-      case "pH":
+      case "ph":
         return "pH";
       case "tds":
         return "TDS";
@@ -82,7 +87,7 @@ const ReadingsChart = ({ readings, title = "Water Quality Readings" }: ReadingsC
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="temperature">Temperature</SelectItem>
-            <SelectItem value="pH">pH</SelectItem>
+            <SelectItem value="ph">pH</SelectItem>
             <SelectItem value="dissolvedOxygen">Dissolved Oxygen</SelectItem>
             <SelectItem value="turbidity">Turbidity</SelectItem>
             <SelectItem value="tds">TDS</SelectItem>
